@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta
 
-sid_to_info = {}  # sid: SidSessionInfo
-
 # How long to wait before spinning up one of our models
 DEFAULT_WAIT_TIME = timedelta(seconds = 3)
 
