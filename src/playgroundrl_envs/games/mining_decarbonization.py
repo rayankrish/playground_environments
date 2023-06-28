@@ -2,6 +2,7 @@ from ..game_interface import GameInterface, PlayerInterface, GameParameterInterf
 import numpy as np
 import json
 import attrs
+import random
 
 class MiningDecarbonizationPlayer(PlayerInterface):
     pass
@@ -10,18 +11,37 @@ class MiningDecarbonizationPlayer(PlayerInterface):
 class MiningDecarbonizationParameters(GameParameterInterface):
     pass
 
-WORLD_SIZE = 4
+WORLD_SIZE = 8
 
 
 class MiningDecarbonizationGame(GameInterface):
-    def __init__(self, game_id, players, game_type, self_training=False):
+    def __init__(self, game_id, players, game_type, parameters, self_training=False):
         super().__init__(game_id, players, game_type, self_training)
 
         assert(len(players) == 1)
         self.player = self.players[0]
 
-        # initialize the world (true state)
-        self._available_resources = np.random.rand(WORLD_SIZE, WORLD_SIZE)
+        # self._available_resources = np.random.rand(WORLD_SIZE, WORLD_SIZE)
+        self._available_resources = np.zeros((WORLD_SIZE, WORLD_SIZE))
+
+        # generate resource dist
+        mean = [random.randrange(0, WORLD_SIZE), random.randrange(0, WORLD_SIZE)]
+        cov = [[4, 1], [1, 4]]
+        samples = np.random.multivariate_normal(mean, cov, 10000)
+        samples = [[int(elem) for elem in arr] for arr in samples]
+        for x, y in samples:
+            if 0 <= x < WORLD_SIZE and 0 <= y < WORLD_SIZE:
+                self._available_resources[x][y] += 1
+
+        mean = [random.randrange(0, WORLD_SIZE), random.randrange(0, WORLD_SIZE)]
+        cov = [[1, 0], [0, 1]]
+        samples = np.random.multivariate_normal(mean, cov, 10000)
+        samples = [[int(elem) for elem in arr] for arr in samples]
+        for x, y in samples:
+            if 0 <= x < WORLD_SIZE and 0 <= y < WORLD_SIZE:
+                self._available_resources[x][y] += 1
+
+        self._available_resources /= self._available_resources.sum()
         self._research_invested = np.zeros((WORLD_SIZE, WORLD_SIZE))
 
         # state observations for current turn
@@ -30,6 +50,7 @@ class MiningDecarbonizationGame(GameInterface):
         # self.money = 1
 
         self.reward = 0
+        self.final_score = 0
         self.is_game_over = False
 
     def submit_action(self, action, player_sid=""):
@@ -66,10 +87,8 @@ class MiningDecarbonizationGame(GameInterface):
         self.emissions = self.mined_resources * (1 - self._research_invested)
         print(self.emissions)
 
-        if self.emissions.sum() == 0:
-            self.reward = self.mined_resources.sum()
-        else:
-            self.reward = self.mined_resources.sum() / self.emissions.sum()
+        self.reward = self.mined_resources.sum() - self.emissions.sum()
+        self.final_score += self.reward
 
         if self.iteration >= 50:  # end if we get to 2050
             self.is_game_over = True
@@ -102,7 +121,7 @@ class MiningDecarbonizationGame(GameInterface):
     def get_outcome(self, player_id):
         if not self.is_game_over:
             return None
-        return self.reward
+        return self.final_score
 
     def get_player_moving(self) -> PlayerInterface:
         return self.player
