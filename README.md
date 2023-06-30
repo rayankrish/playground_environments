@@ -1,3 +1,7 @@
+
+For Atari environments, will need to run the following:
+`AutoROM --accept-license`
+
 Increment version number in setup.cfg
 
 Build with 
@@ -11,3 +15,4 @@ Then publish with
 
 Might need to do 
 `pip install twine`
+

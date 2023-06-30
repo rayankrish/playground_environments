@@ -20,6 +20,7 @@ setup(
     # long_description=open('README.txt').read(),
     install_requires=[
         "attrs==22.2.0",
+        "multi-agent-ale-py==0.1.11",
         "AutoROM==0.6.1",
         "catanatron==3.2.1",
         "cattrs==22.2.0",
