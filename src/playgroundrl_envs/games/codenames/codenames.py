@@ -4,6 +4,7 @@ from ...game_interface import GameInterface, PlayerInterface, GameParameterInter
 from enum import Enum
 import attrs
 from importlib.resources import files
+from typing import List, Dict, Any
 
 
 # TODO: Import these from
@@ -20,9 +21,10 @@ class PlayerType(str, Enum):
     GUESSER = "GUESSER"
 
 
+@attrs.define
 class CodenamesPlayer(PlayerInterface):
-    color: Color
-    type: PlayerType
+    color: Color = None
+    type: PlayerType = None
 
 
 @attrs.define(frozen=True)
@@ -40,7 +42,7 @@ class Team:
 # TODO: Thread safety
 # DICTIONARY = enchant.Dict("en_US")
 
-BOARD_SIZE = 5
+BOARD_SIZE = 25
 RED_CARDS = 9
 BLUE_CARDS = 8
 
@@ -56,29 +58,26 @@ def get_word_board():
             .read_text()
         ).split("\n")
 
-    cards = random.sample(card_list, BOARD_SIZE**2)
+    cards = random.sample(card_list, BOARD_SIZE)
     cards = [c.strip() for c in cards]
-    cards = [cards[i * BOARD_SIZE : (i + 1) * BOARD_SIZE] for i in range(BOARD_SIZE)]
     return cards
 
 
 def get_card_colors():
-    coordinates = random.sample(
-        [(i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE)],
-        RED_CARDS + BLUE_CARDS + 1,
-    )
+    coordinates = list(range(BOARD_SIZE))
+    random.shuffle(coordinates)
 
-    colors = [[Color.INNOCENT for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+    colors = [Color.INNOCENT for _ in range(BOARD_SIZE)]
 
     # Set
-    for i, j in coordinates[:RED_CARDS]:
-        colors[i][j] = Color.RED
+    for i in coordinates[:RED_CARDS]:
+        colors[i] = Color.RED
 
-    for i, j in coordinates[RED_CARDS : RED_CARDS + BLUE_CARDS]:
-        colors[i][j] = Color.BLUE
+    for i in coordinates[RED_CARDS : RED_CARDS + BLUE_CARDS]:
+        colors[i] = Color.BLUE
 
-    i, j = coordinates[RED_CARDS + BLUE_CARDS]
-    colors[i][j] = Color.ASSASSIN
+    i = coordinates[RED_CARDS + BLUE_CARDS]
+    colors[i] = Color.ASSASSIN
     return colors
 
 
@@ -112,17 +111,9 @@ class CodenamesGame(GameInterface):
             self.players[2].type = PlayerType.GIVER
             self.players[3].type = PlayerType.GUESSER
 
-        # self.teams = {
-        #     Color.RED : Team(self.players[0], self.players[1]),
-        #     Color.BLUE : Team(self.players[2], self.players[3])
-        # }
-
         self.words = get_word_board()
         self.actual_colors = get_card_colors()
-        self.guessed_colors = [
-            [Color.UNKNOWN for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)
-        ]
-
+        self.guessed_colors = [Color.UNKNOWN] * BOARD_SIZE
         self.player_moving_idx = 0
 
         self.last_clue = ""
@@ -138,88 +129,160 @@ class CodenamesGame(GameInterface):
         self.is_game_over = False
 
     @property
-    def player_moving(self):
+    def player_moving(self) -> CodenamesPlayer:
         return self.players[self.player_moving_idx]
 
-    def increment_turn(self):
+    def increment_turn(self) -> None:
+        self.guessed_count = 0
         self.player_moving_idx = (self.player_moving_idx + 1) % self.num_players
 
-    def other_team(self, color: Color):
+    def other_team(self, color: Color) -> bool:
         return color.RED if color == color.BLUE else color.BLUE
 
-    def submit_action(self, action, player_sid=""):
-        if self.player_moving.sid != player_sid:
-            return False
-
-        # TODO: This isn't necessary
-        action = json.loads(action)
-        player_color = self.player_moving.color
-
-        if self.player_moving.type == PlayerType.GIVER:
-            word = action["word"].lower()
-            # if not DICTIONARY.check(word):
-            #     print("RECEIVED INVALID WORD -- words must be english")
-            #     return False
-            # Can't use same word as on board
-            for row in self.words:
-                for board_word in row:
-                    if word == board_word:
-                        return False
-
-            count = int(action["count"])
-
-            if count < 0 or count > 9:
+    def validate_guesses(self, guesses: List[int]) -> True:
+        seen = set()
+        for guess in guesses:
+            if type(guess) != int:
                 return False
 
-            self.last_clue = word
-            self.last_count = count
+            if not -1 <= guess < BOARD_SIZE:
+                # Guess out of range
+                return False
 
-            self.increment_turn()
+            if self.guessed_colors[guess] != Color.UNKNOWN:
+                # Guessed an already guessed square
+                return False
+
+            if guess in seen:
+                # Duplicate guess in list
+                return False
+            seen.add(guess)
+
+        return True
+
+    def handle_guesser_action(self, action: Dict[str, Any]) -> bool:
+        """
+        Logic if we received action for guesser
+        """
+        end_turn_automatically = False
+        player_color = self.player_moving.color
+
+        if "guess" in action:
+            # Single-guess mode
+            guesses = [action["guess"]]
+        elif "guesses" in action:
+            # Multi-guess mode
+            end_turn_automatically = True
+            guesses = action["guesses"]
         else:
-            row, col = action["guess"]
-            if row == col == -1:
+            # Requires one of guess or guesses
+            return False
+
+        if not self.validate_guesses(guesses):
+            return False
+
+        # RESET REWARD
+        self.reward[player_color] = 0
+        for guess_idx, guess in enumerate(guesses):
+            keep_guessing = False
+            if guess == -1:
                 # -1, -1 represents finishing your turn
                 self.increment_turn()
             else:
-                if not 0 <= row < BOARD_SIZE or not 0 <= col < BOARD_SIZE:
-                    return False
-
-                if self.guessed_colors[row][col] != Color.UNKNOWN:
-                    return False
-
-                color = self.actual_colors[row][col]
-                self.guessed_colors[row][col] = color
+                color = self.actual_colors[guess]
+                # Update to signify it has been guessed
+                self.guessed_colors[guess] = color
 
                 if color == Color.ASSASSIN:
                     self.is_game_over = True
                     self.winning_team = self.other_team(self.player_moving.color)
                 else:
                     if color != Color.INNOCENT:
+                        # Increase score for a team
                         self.scores[color] += 1
 
                     if color == player_color:
                         self.guessed_count += 1
-                        self.reward[player_color] = 0
+                        self.reward[player_color] += 1
+
                         if self.guessed_count >= self.last_count + 1:
-                            self.guessed_count = 0
+                            # We've guessed more than the count given
                             self.increment_turn()
+                        else:
+                            keep_guessing = True
 
                     elif color == Color.INNOCENT:
-                        self.reward[player_color] = 0
+                        # Penalty for an innocent is -0.5
+                        self.reward[player_color] -= 0.5
                     else:
-                        self.reward[player_color] = -1
+                        # Penalty for opposing team is -1
+                        self.reward[player_color] -= 1
 
                     if color != player_color:
+                        # If we didn't guess correct,
+                        # it's the other team's turn
                         self.guessed_count = 0
                         self.increment_turn()
 
+                    # Check for game over conditions
                     if self.scores[Color.BLUE] == BLUE_CARDS:
                         self.is_game_over = True
                         self.winning_team = Color.BLUE
+
                     elif self.scores[Color.RED] == RED_CARDS:
                         self.is_game_over = True
                         self.winning_team = Color.RED
-        return True  # Success
+
+            if guess_idx == len(guesses) - 1 and end_turn_automatically:
+                # If we've already exhausted the guesses given to us,
+                # we should go to the next turn automatically
+                self.increment_turn()
+
+            if not keep_guessing:
+                # In this scenario, we've done something that ends our turn
+                # so end the loop early
+                break
+
+        return True
+
+    def handle_giver_action(self, action: Dict[str, Any]) -> bool:
+        """
+        Logic if we received action for spymaster player
+        """
+        word = action["word"].lower()
+
+        # TODO: Check word belongs to a dictionary
+
+        # Can't use same word as on board
+        for board_word in self.words:
+            # Check if either is a substring of the other
+            if board_word in word or word in board_word:
+                return False
+
+        count = int(action["count"])
+
+        if count < 0 or count > 9:
+            return False
+        self.last_clue = word
+        self.last_count = count
+
+        self.increment_turn()
+        return True
+
+    def submit_action(self, action, player_sid=""):
+        """
+        Callback to handle action
+        """
+        if self.player_moving.sid != player_sid:
+            return False
+
+        # TODO: This isn't necessary
+        action = json.loads(action)
+
+        if self.player_moving.type == PlayerType.GIVER:
+            return self.handle_giver_action(action)
+        else:
+            return self.handle_guesser_action(action)
 
     def get_state(self, player_sid="", player_id=-1):
         # TODO: Smarter
