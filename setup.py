@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="playgroundrl_envs",
-    version="0.0.5",
+    version="0.0.7",
     author="Rayan Krishnan",
     # TODO: figure out systematic way to do this
     packages=[
@@ -14,6 +14,8 @@ setup(
         "playgroundrl_envs.games.catan",
     ],
     package_dir={"": "src"},
+    package_data={"": ["*.txt"]},
+    include_package_data=True,
     scripts=[],
     url="http://pypi.python.org/pypi/playgroundrl_envs/",
     description="The environments hosted on Playground RL",

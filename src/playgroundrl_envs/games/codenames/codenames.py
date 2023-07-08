@@ -2,10 +2,8 @@ import json
 import random
 from ...game_interface import GameInterface, PlayerInterface, GameParameterInterface
 from enum import Enum
-from ...sid_util import SidSessionInfo
 import attrs
-
-# import enchant
+from importlib.resources import files
 
 
 # TODO: Import these from
@@ -52,8 +50,11 @@ card_list = None
 def get_word_board():
     global card_list
     if card_list is None:
-        with open("game_app/games/codenames/wordlist.txt", "r") as f:
-            card_list = f.readlines()
+        card_list = (
+            files(package="playgroundrl_envs.games.codenames")
+            .joinpath("wordlist.txt")
+            .read_text()
+        ).split("\n")
 
     cards = random.sample(card_list, BOARD_SIZE**2)
     cards = [c.strip() for c in cards]
@@ -159,7 +160,6 @@ class CodenamesGame(GameInterface):
             # if not DICTIONARY.check(word):
             #     print("RECEIVED INVALID WORD -- words must be english")
             #     return False
-
             # Can't use same word as on board
             for row in self.words:
                 for board_word in row:
@@ -219,7 +219,6 @@ class CodenamesGame(GameInterface):
                     elif self.scores[Color.RED] == RED_CARDS:
                         self.is_game_over = True
                         self.winning_team = Color.RED
-
         return True  # Success
 
     def get_state(self, player_sid="", player_id=-1):
