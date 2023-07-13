@@ -49,18 +49,15 @@ class GoGame(GameInterface):
     def submit_action(self, action, player_sid=""):
         if self.player_moving.sid != player_sid:
             # Assert the socket has the right to make actions for this player
-            return PlaygroundInvalidActionException("It is not your turn.")
+            raise PlaygroundInvalidActionException("It is not your turn.")
 
         # Should be int representing action
         action = int(action)
 
-        try: 
+        try:
             self.state = go_engine.next_state(self.state, action)
         except AssertionError:
             raise PlaygroundInvalidActionException("You cannot place a piece there.")
-
-        # Submit action on behalf of the player who's turn it is
-        player_id = self.player_moving.player_id
 
         black_area, white_area = go_engine.areas(self.state)
 

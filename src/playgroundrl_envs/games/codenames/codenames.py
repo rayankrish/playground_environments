@@ -5,6 +5,7 @@ from enum import Enum
 import attrs
 from importlib.resources import files
 from typing import List, Dict, Any
+from ...exceptions import PlaygroundInvalidActionException
 
 
 # TODO: Import these from
@@ -139,26 +140,28 @@ class CodenamesGame(GameInterface):
     def other_team(self, color: Color) -> bool:
         return color.RED if color == color.BLUE else color.BLUE
 
-    def validate_guesses(self, guesses: List[int]) -> True:
+    def validate_guesses(self, guesses: List[int]) -> None:
         seen = set()
         for guess in guesses:
             if type(guess) != int:
-                return False
+                raise PlaygroundInvalidActionException("Guess was not an integer")
 
             if not -1 <= guess < BOARD_SIZE:
                 # Guess out of range
-                return False
+                raise PlaygroundInvalidActionException(
+                    f"Guess out not in range (-1, {BOARD_SIZE})"
+                )
 
             if self.guessed_colors[guess] != Color.UNKNOWN:
                 # Guessed an already guessed square
-                return False
+                raise PlaygroundInvalidActionException(
+                    "Guessed a previously-guessed card"
+                )
 
             if guess in seen:
                 # Duplicate guess in list
-                return False
+                raise PlaygroundInvalidActionException("Duplicate guesses in list")
             seen.add(guess)
-
-        return True
 
     def handle_guesser_action(self, action: Dict[str, Any]) -> bool:
         """
@@ -176,10 +179,11 @@ class CodenamesGame(GameInterface):
             guesses = action["guesses"]
         else:
             # Requires one of guess or guesses
-            return False
+            return PlaygroundInvalidActionException(
+                "User must specify one of 'guess' or 'guesses' in socket request."
+            )
 
-        if not self.validate_guesses(guesses):
-            return False
+        self.validate_guesses(guesses)
 
         # RESET REWARD
         self.reward[player_color] = 0
@@ -249,7 +253,15 @@ class CodenamesGame(GameInterface):
         """
         Logic if we received action for spymaster player
         """
-        word = action["word"].lower()
+        if "word" not in action or "count" not in action:
+            raise PlaygroundInvalidActionException(
+                'Socket message must be in format \{"word": str, "count": int \}'
+            )
+
+        word = action["word"].lower().strip()
+
+        if " " in word:
+            raise PlaygroundInvalidActionException("Clue must be only a single word")
 
         # TODO: Check word belongs to a dictionary
 
@@ -257,12 +269,15 @@ class CodenamesGame(GameInterface):
         for board_word in self.words:
             # Check if either is a substring of the other
             if board_word in word or word in board_word:
-                return False
+                raise PlaygroundInvalidActionException(
+                    "Word cannot be a substring or superstring of any board word."
+                )
 
         count = int(action["count"])
 
         if count < 0 or count > 9:
-            return False
+            raise PlaygroundInvalidActionException("Count must be between 0 and 9")
+
         self.last_clue = word
         self.last_count = count
 
@@ -274,7 +289,7 @@ class CodenamesGame(GameInterface):
         Callback to handle action
         """
         if self.player_moving.sid != player_sid:
-            return False
+            raise PlaygroundInvalidActionException("Not your turn.")
 
         # TODO: This isn't necessary
         action = json.loads(action)
