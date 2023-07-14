@@ -5,28 +5,31 @@ from typing import List, Dict
 import json
 import chess as pychess
 from ..sid_util import SidSessionInfo
+from ..exceptions import PlaygroundInvalidActionException
+
 
 @attrs.define
 class ChessPlayer(PlayerInterface):
     color: pychess.Color
 
-    def __init__(self, sid_info, player_id): 
-        super().__init__( sid_info, player_id) 
+    def __init__(self, sid_info, player_id):
+        super().__init__(sid_info, player_id)
         self.color = None
 
-@attrs.define(frozen = True)
+
+@attrs.define(frozen=True)
 class ChessParameters(GameParameterInterface):
     pass
 
 
 class ChessGame(GameInterface):
     def __init__(
-            self, 
-            game_id: str, 
-            players: List[ChessPlayer], 
-            game_type: int,
-            parameters: ChessParameters,
-            self_training = False
+        self,
+        game_id: str,
+        players: List[ChessPlayer],
+        game_type: int,
+        parameters: ChessParameters,
+        self_training=False,
     ):
         super().__init__(game_id, players, game_type, self_training)
 
@@ -44,33 +47,34 @@ class ChessGame(GameInterface):
 
     def submit_action(self, action, player_sid=""):
         # Check it's their turn
-        # TODO: We can probably do this in a smoother way 
-        if self.player_moving.sid != player_sid: 
-            return False
+        # TODO: We can probably do this in a smoother way
+        if self.player_moving.sid != player_sid:
+            raise PlaygroundInvalidActionException("Not your turn")
 
-        # The move mst be for current moving player 
+        # The move mst be for current moving player
         player = self.player_moving
 
         # This check might not be strictly necessary
         if player.color != self.board.turn:
-            return False
-
+            raise PlaygroundInvalidActionException("Not your turn")
 
         # Expect format
         # {
         #   'uci': 'g1f3'
-        # } 
+        # }
         action = json.loads(action)
 
-        move_uci = action['uci']
+        move_uci = action["uci"]
         move = pychess.Move.from_uci(move_uci)
 
         if move not in self.board.legal_moves:
-            print("ILLEGAL MOVE")
-            return False
-        
+            raise PlaygroundInvalidActionException("Illegal move")
+
         self.board.push(move)
-        self.player_waiting, self.player_moving = self.player_moving, self.player_waiting
+        self.player_waiting, self.player_moving = (
+            self.player_moving,
+            self.player_waiting,
+        )
 
         # check if the game is over, TODO: make this cleaner
         outcome = self.board.outcome()
@@ -78,28 +82,29 @@ class ChessGame(GameInterface):
             self.is_game_over = True
             if outcome.termination in pychess.Termination:
                 for player_id in list(self.players.keys()):
-                    self.reward[player_id] = 1 if outcome.winner is self.players[player_id].color else -1
+                    self.reward[player_id] = (
+                        1 if outcome.winner is self.players[player_id].color else -1
+                    )
             else:
                 for player_id in list(self.players.keys()):
                     self.reward[player_id] = 0
 
         return True
 
-
     def get_is_game_over(self):
         return self.is_game_over
-    
-    def get_state(self, player_sid="", player_id = None):
+
+    def get_state(self, player_sid="", player_id=None):
         if player_id == None:
             player_id = self.player_moving.player_id
 
         state = {
             # FEN is a standard for board representation
-            'fen': self.board.fen(),
-            'player_moving': self.player_moving.user_id,
-            'model_name': self.player_moving.model_name,
-            'player_moving_id': self.player_moving.player_id, 
-            'player_id' :player_id
+            "fen": self.board.fen(),
+            "player_moving": self.player_moving.user_id,
+            "model_name": self.player_moving.model_name,
+            "player_moving_id": self.player_moving.player_id,
+            "player_id": player_id
             # TODO: We might want other game state here
         }
         return json.dumps(state), self.reward[player_id]
@@ -116,13 +121,13 @@ class ChessGame(GameInterface):
         return self.player_moving
 
     def get_outcome(self, player_id):
-        # TODO: Claim draw 
+        # TODO: Claim draw
         outcome = self.board.outcome()
         player = self.players[player_id]
 
         if outcome is None:
             return None
-        
+
         if outcome.termination == pychess.Termination.CHECKMATE:
             if outcome.winner is player.color:
                 return 1

@@ -2,6 +2,7 @@ from ..game_interface import GameInterface, PlayerInterface, GameParameterInterf
 import random
 import json
 import attrs
+from ..exceptions import PlaygroundInvalidActionException
 
 NUM_TILES_PER_SIDE = 10
 
@@ -17,18 +18,28 @@ def is_not_overlapping(_snake):
     tail = _snake[:-1]
     return head not in tail
 
+
 class SnakePlayer(PlayerInterface):
     pass
 
-@attrs.define(frozen = True)
+
+@attrs.define(frozen=True)
 class SnakeParameters(GameParameterInterface):
     pass
 
+
 class SnakeGame(GameInterface):
-    def __init__(self, game_id, players, game_type, parameters: SnakeParameters, self_training = False):
+    def __init__(
+        self,
+        game_id,
+        players,
+        game_type,
+        parameters: SnakeParameters,
+        self_training=False,
+    ):
         super().__init__(game_id, players, game_type, self_training)
 
-        assert(len(players) == 1)
+        assert len(players) == 1
 
         self.player = self.players[0]
 
@@ -54,7 +65,7 @@ class SnakeGame(GameInterface):
 
     def get_is_game_over(self):
         return self.is_game_over
-    
+
     def get_outcome(self, player_sid):
         if not self.is_game_over:
             return None
@@ -62,7 +73,7 @@ class SnakeGame(GameInterface):
 
     def submit_action(self, action, player_sid=""):
         if action not in self.moves:
-            return False
+            raise PlaygroundInvalidActionException("Invalid move")
         self.orient = action
         self.reward = -0.01  # cost of existence
 
@@ -82,11 +93,11 @@ class SnakeGame(GameInterface):
             self.is_game_over = True
         return True
 
-    def get_state(self, player_sid="", player_id = 0):
+    def get_state(self, player_sid="", player_id=0):
         state = {
             "player_moving": self.player.user_id,
-            "model_name" : self.player.model_name,
-            "player_moving_id" : self.player.player_id,
+            "model_name": self.player.model_name,
+            "player_moving_id": self.player.player_id,
             "apple": self.apple,
             "snake": self.snake,
         }
