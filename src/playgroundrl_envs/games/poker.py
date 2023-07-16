@@ -128,7 +128,9 @@ class Poker(GameInterface):
             else:
                 self.game.take_action(type)
         except ValueError as e:
-            raise PlaygroundInvalidActionException("Raise must be at least {}", total)
+            raise PlaygroundInvalidActionException(
+                f"Raise must be at least {self.game.min_raise()}."
+            )
 
         # Start next round if necessary
         if not self.game.is_hand_running():

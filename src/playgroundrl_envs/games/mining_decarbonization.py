@@ -64,7 +64,9 @@ class MiningDecarbonizationGame(GameInterface):
             or "exploration" not in action
             or "research" not in action
         ):
-            raise PlaygroundInvalidActionException("Not all actions available")
+            raise PlaygroundInvalidActionException(
+                r'Action must specify "mining", "exploration", and "research" fields'
+            )
         mining_budget = np.array(action["mining"], dtype=float)
         explore_budget = np.array(action["exploration"], dtype=float)
         research_budget = np.array(action["research"], dtype=float)

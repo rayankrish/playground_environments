@@ -73,7 +73,9 @@ class SnakeGame(GameInterface):
 
     def submit_action(self, action, player_sid=""):
         if action not in self.moves:
-            raise PlaygroundInvalidActionException("Invalid move")
+            raise PlaygroundInvalidActionException(
+                r'Move must be one of "N", "E", "S", or "W"'
+            )
         self.orient = action
         self.reward = -0.01  # cost of existence
 
