@@ -8,26 +8,29 @@ from PIL import Image
 import io
 import base64
 from pettingzoo.classic import connect_four_v3
+from ..exceptions import PlaygroundInvalidActionException
 
 
 class PettingZooPlayer(PlayerInterface):
     def __init__(self, sid_info, player_id):
-        super().__init__( sid_info, player_id)
+        super().__init__(sid_info, player_id)
         self.agent_name = None
 
-@attrs.define(frozen = True)
+
+@attrs.define(frozen=True)
 class PettingZooParameters(GameParameterInterface):
     family: str
     game_name: str
 
+
 class PettingZooGame(GameInterface):
     def __init__(
-            self,
-            game_id: str,
-            players: List[PettingZooPlayer],
-            game_type: int,
-            parameters: PettingZooParameters,
-            self_training=False
+        self,
+        game_id: str,
+        players: List[PettingZooPlayer],
+        game_type: int,
+        parameters: PettingZooParameters,
+        self_training=False,
     ):
         super().__init__(game_id, players, game_type, self_training)
 
@@ -35,8 +38,12 @@ class PettingZooGame(GameInterface):
 
         self.family = parameters.family  # "classic"
         self.game_name = parameters.game_name  # "connect_four_v3"
-        self.module = importlib.import_module("pettingzoo." + self.family + "." + self.game_name)
-        self.env = self.module.env(render_mode="rgb_array")  # TODO: don't do this unless we need it
+        self.module = importlib.import_module(
+            "pettingzoo." + self.family + "." + self.game_name
+        )
+        self.env = self.module.env(
+            render_mode="rgb_array"
+        )  # TODO: don't do this unless we need it
         self.env.reset()
         self.state = self.env.last()
 
@@ -52,7 +59,7 @@ class PettingZooGame(GameInterface):
         curr_player = self.players[self.player_ids[self.player_moving_index]]
         if curr_player.sid != player_sid:
             # Assert the socket has the right to make actions for this player
-            return False
+            raise PlaygroundInvalidActionException("Not player's turn")
 
         # parse the action
         action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))
@@ -96,5 +103,3 @@ class PettingZooGame(GameInterface):
 
     def get_player_moving(self) -> PlayerInterface:
         return self.players[self.player_ids[self.player_moving_index]]
-
-
