@@ -20,7 +20,7 @@ WORLD_SIZE = 8
 
 class MiningDecarbonizationGame(GameInterface):
     def __init__(self, game_id, players, game_type, parameters, self_training=False):
-        super().__init__(game_id, players, game_type, self_training)
+        super().__init__(game_id, parameters, players, game_type, self_training)
 
         assert len(players) == 1
         self.player = self.players[0]

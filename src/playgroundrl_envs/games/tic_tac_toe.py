@@ -1,8 +1,9 @@
 from ..game_interface import GameInterface, PlayerInterface, GameParameterInterface
 import json
-import attrs 
+import attrs
 
 EMPTY_SQUARE = -1
+
 
 def check_winning_board(board):
     for i in range(3):
@@ -18,25 +19,43 @@ def check_winning_board(board):
             and board[0][i] != EMPTY_SQUARE
         ):
             return True
-    if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[0][0] != EMPTY_SQUARE:
+    if (
+        board[0][0] == board[1][1]
+        and board[1][1] == board[2][2]
+        and board[0][0] != EMPTY_SQUARE
+    ):
         return True
-    if board[0][2] == board[1][1] and board[1][1] == board[2][0] and board[0][2] != EMPTY_SQUARE:
+    if (
+        board[0][2] == board[1][1]
+        and board[1][1] == board[2][0]
+        and board[0][2] != EMPTY_SQUARE
+    ):
         return True
     return False
 
 
 board_squares = [(a, b) for a in range(3) for b in range(3)]
 
+
 class TicTacToePlayer(PlayerInterface):
     pass
 
-@attrs.define(frozen = True)
+
+@attrs.define(frozen=True)
 class TicTacToeParameters(GameParameterInterface):
     pass
 
+
 class TicTacToeGame(GameInterface):
-    def __init__(self, game_id, players, game_type, parameters: TicTacToeParameters, self_training = False):
-        super().__init__(game_id, players, game_type, self_training)
+    def __init__(
+        self,
+        game_id,
+        players,
+        game_type,
+        parameters: TicTacToeParameters,
+        self_training=False,
+    ):
+        super().__init__(game_id, parameters, players, game_type, self_training)
         self.is_game_over = False
 
         # -1 empty, 0 for player 1, 1 for player 2
@@ -50,7 +69,7 @@ class TicTacToeGame(GameInterface):
         if self.player_moving.sid != player_sid:
             # Assert the socket has the right to make actions for this player
             return False
-        
+
         # action should be a string "0" to "8" for the possible squares
         x, y = board_squares[int(action)]
         if self.board[x][y] != EMPTY_SQUARE:
@@ -78,19 +97,19 @@ class TicTacToeGame(GameInterface):
         )
         return True
 
-    def get_state(self, player_sid="", player_id = -1):
+    def get_state(self, player_sid="", player_id=-1):
         if player_id == -1:
             player_id = self.player_moving.player_id
-        
+
         # Return as JSON so it's very easy to parse
         return (
             json.dumps(
                 {
-                 "player_moving": self.player_moving.user_id,
-                 "model_name": self.player_moving.model_name,
-                 "player_moving_id": self.player_moving.player_id,
-                 "board": self.board,
-                 }
+                    "player_moving": self.player_moving.user_id,
+                    "model_name": self.player_moving.model_name,
+                    "player_moving_id": self.player_moving.player_id,
+                    "board": self.board,
+                }
             ),
             self.reward[player_id],
         )
@@ -102,7 +121,7 @@ class TicTacToeGame(GameInterface):
     @staticmethod
     def get_num_players():
         return 2
-    
+
     def get_player_moving(self):
         return self.player_moving
 

@@ -37,7 +37,7 @@ class SnakeGame(GameInterface):
         parameters: SnakeParameters,
         self_training=False,
     ):
-        super().__init__(game_id, players, game_type, self_training)
+        super().__init__(game_id, parameters, players, game_type, self_training)
 
         assert len(players) == 1
 

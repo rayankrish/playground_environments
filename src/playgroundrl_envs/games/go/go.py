@@ -28,7 +28,7 @@ class GoGame(GameInterface):
     def __init__(
         self, game_id, players, game_type, parameters: GoParameters, self_training=False
     ):
-        super().__init__(game_id, players, game_type, self_training)
+        super().__init__(game_id, parameters, players, game_type, self_training)
 
         self.reward = {player.player_id: 0 for player in players}
         self.player_moving, self.player_waiting = players[0], players[1]

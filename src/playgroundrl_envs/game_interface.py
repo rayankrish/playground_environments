@@ -51,10 +51,12 @@ class GameInterface(ABC):
     def __init__(
         self,
         game_id,
+        parameters: GameParameterInterface,
         players: List[PlayerInterface] = [],
         game_type=0,
         self_training=False,
     ):
+        self.parameters = parameters
         self.iteration = 0
         self.game_id = game_id
         # self.players = {player.sid: player for player in players}

@@ -48,7 +48,9 @@ class Poker(GameInterface):
         parameters: PokerParameters,
         self_training=False,
     ):
-        super().__init__(game_id, players, game_type, self_training=self_training)
+        super().__init__(
+            game_id, parameters, players, game_type, self_training=self_training
+        )
 
         self.reward = {player.player_id: 0 for player in players}
 

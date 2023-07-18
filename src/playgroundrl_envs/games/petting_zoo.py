@@ -32,7 +32,7 @@ class PettingZooGame(GameInterface):
         parameters: PettingZooParameters,
         self_training=False,
     ):
-        super().__init__(game_id, players, game_type, self_training)
+        super().__init__(game_id, parameters, players, game_type, self_training)
 
         self.is_game_over = False
 
