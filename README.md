@@ -3,6 +3,8 @@
 This repository contains the game environments used in the backend
 of the PlaygroundRL website. These environments help to facilitate
 gameplay by providing relevant game boundaries, rules, and states.
+Each environment included is game-specific, defining relevant
+classes and functions needed to characterize gameplay.
 In particular, the repository contains PettingZoo environments,
 allowing for multi-agent reinforcement learning research opportunities. 
 Instructions to install this package are below. 
