@@ -4,7 +4,7 @@ This repository contains the game environments used in the backend
 of the PlaygroundRL website. These environments help to facilitate
 gameplay by providing relevant game boundaries, rules, and states.
 In particular, the repository contains PettingZoo environments,
-allowing for multi-agent reinforcement research opportunities. 
+allowing for multi-agent reinforcement learning research opportunities. 
 Instructions to install this package are below. 
 
 ## How to Install
@@ -21,3 +21,10 @@ Instructions to install this package are below.
 `python -m twine upload dist/*`
     - You may need to do 
       `pip install twine` if `twine` is not installed in your computer
+
+## Credits
+
+Created and developed by Rayan Krishnan and Langston Nashold. 
+
+Modified by Chuyi Zhang.
+
