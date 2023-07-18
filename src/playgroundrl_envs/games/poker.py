@@ -252,7 +252,7 @@ class Poker(GameInterface):
             return None
 
         chips = self.game.players[player_id].chips
-        return chips / (BUY_IN * 3)
+        return 0 if chips <= 0 else 1
 
     def get_player_moving(self):
         player_moving_id = self.game.current_player
