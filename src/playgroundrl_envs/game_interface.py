@@ -40,7 +40,7 @@ class PlayerInterface:
 
     @property
     def model_name(self):
-        return self.session_info.is_human
+        return self.session_info.model_name
 
     @property
     def is_human(self):
