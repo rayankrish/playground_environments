@@ -4,15 +4,7 @@ setup(
     name="playgroundrl_envs",
     version="0.0.7",
     author="Rayan Krishnan",
-    # TODO: figure out systematic way to do this
-    packages=[
-        "playgroundrl_envs",
-        "playgroundrl_envs.games",
-        "playgroundrl_envs.games.go",
-        "playgroundrl_envs.games.go.engine",
-        "playgroundrl_envs.games.codenames",
-        "playgroundrl_envs.games.catan",
-    ],
+    packages=find_packages(),
     package_dir={"": "src"},
     package_data={"": ["*.txt"]},
     include_package_data=True,
