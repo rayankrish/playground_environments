@@ -11,10 +11,10 @@ Instructions to install this package are below.
 
 2. Build with 
 `python -m build` 
-- You may need to do
-    `pip install build`
+    - You may need to do
+      `pip install build`
 
 3. Then publish with 
 `python -m twine upload dist/*`
-- You may need to do 
-    `pip install twine`
+    - You may need to do 
+      `pip install twine`
