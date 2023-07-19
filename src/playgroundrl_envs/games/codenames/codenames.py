@@ -190,10 +190,10 @@ class CodenamesGame(GameInterface):
         # RESET REWARD
         self.reward[player_color] = 0
         for guess_idx, guess in enumerate(guesses):
-            keep_guessing = False
             if guess == -1:
                 # -1, -1 represents finishing your turn
                 self.increment_turn()
+                break
             else:
                 color = self.actual_colors[guess]
                 # Update to signify it has been guessed
@@ -202,6 +202,8 @@ class CodenamesGame(GameInterface):
                 if color == Color.ASSASSIN:
                     self.is_game_over = True
                     self.winning_team = self.other_team(self.player_moving.color)
+                    self.increment_turn()
+                    break
                 else:
                     if color != Color.INNOCENT:
                         # Increase score for a team
@@ -214,6 +216,7 @@ class CodenamesGame(GameInterface):
                         if self.guessed_count >= self.last_count + 1:
                             # We've guessed more than the count given
                             self.increment_turn()
+                            break
                         else:
                             keep_guessing = True
 
@@ -229,6 +232,7 @@ class CodenamesGame(GameInterface):
                         # it's the other team's turn
                         self.guessed_count = 0
                         self.increment_turn()
+                        break
 
                     # Check for game over conditions
                     if self.scores[Color.BLUE] == BLUE_CARDS:
@@ -243,10 +247,6 @@ class CodenamesGame(GameInterface):
                 # If we've already exhausted the guesses given to us,
                 # we should go to the next turn automatically
                 self.increment_turn()
-
-            if not keep_guessing:
-                # In this scenario, we've done something that ends our turn
-                # so end the loop early
                 break
 
         return True
