@@ -11,6 +11,10 @@ Instructions to install this package are below.
 
 ## How to Install
 
+Run the following command `pip install playgroundrl-envs`
+
+## How to Build
+
 1. Increment version number in setup.cfg
 
 2. Use `pip install .` to install the package's dependencies
