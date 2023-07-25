@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="playgroundrl_envs",
-    version="0.0.11",
+    version="0.0.13",
     author="Rayan Krishnan",
     packages=find_packages(),
     package_dir={"": "src"},
