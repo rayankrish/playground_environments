@@ -7,13 +7,13 @@ from importlib.resources import files
 from typing import List, Dict, Any
 from ...exceptions import PlaygroundInvalidActionException
 
-from nltk.corpus import words as word_corpus_loader
+from nltk.corpus import wordnet as word_corpus_loader
 import nltk
 
 try:
     word_corpus_loader.ensure_loaded()
 except:
-    nltk.download("words")
+    nltk.download("wordnet")
 
 # Just store corpus as a shared global variable for now
 # Important it's global, becausae we don't want a new
