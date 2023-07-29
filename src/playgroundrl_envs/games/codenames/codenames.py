@@ -296,7 +296,7 @@ class CodenamesGame(GameInterface):
 
         count = int(action["count"])
 
-        if count < 0 or count > 9:
+        if not (1 <= count <= 9):
             raise PlaygroundInvalidActionException("Count must be between 0 and 9")
 
         self.last_clue = word
