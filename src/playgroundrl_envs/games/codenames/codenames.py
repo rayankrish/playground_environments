@@ -247,20 +247,28 @@ class CodenamesGame(GameInterface):
                         self.increment_turn()
                         break
 
-                    # Check for game over conditions
-                    if self.scores[Color.BLUE] == BLUE_CARDS:
-                        self.is_game_over = True
-                        self.winning_team = Color.BLUE
-
-                    elif self.scores[Color.RED] == RED_CARDS:
-                        self.is_game_over = True
-                        self.winning_team = Color.RED
+            if (
+                self.scores[color.BLUE] == BLUE_CARDS
+                or self.scores[color.RED] == RED_CARDS
+            ):
+                # Stop guessing if game is over
+                # It's a little bad we do this check twice
+                break
 
             if guess_idx == len(guesses) - 1 and end_turn_automatically:
                 # If we've already exhausted the guesses given to us,
                 # we should go to the next turn automatically
                 self.increment_turn()
                 break
+
+        # Check for game over conditions
+        if self.scores[Color.BLUE] == BLUE_CARDS:
+            self.is_game_over = True
+            self.winning_team = Color.BLUE
+
+        elif self.scores[Color.RED] == RED_CARDS:
+            self.is_game_over = True
+            self.winning_team = Color.RED
 
         return True
 
