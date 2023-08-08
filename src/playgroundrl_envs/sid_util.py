@@ -1,8 +1,5 @@
 from datetime import datetime, timedelta
 
-# How long to wait before spinning up one of our models
-DEFAULT_WAIT_TIME = timedelta(seconds=3)
-
 
 class SidSessionInfo:
     def __init__(self, sid, user_id, is_human):
@@ -12,7 +9,7 @@ class SidSessionInfo:
         self.model_name = ""
         self.is_human = is_human
         # Time to wait before creation
-        self.wait_time = DEFAULT_WAIT_TIME
+        self.wait_time = 0
         self.creation = datetime.now()
         """Time player joined queue"""
         self.model_type = None
