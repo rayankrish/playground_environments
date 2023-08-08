@@ -3,6 +3,7 @@ import os
 import sys
 
 def create_test_suite(test_dir):
+    print(f"Running tests in {test_dir}")
     loader = unittest.TestLoader()
     suite = loader.discover(test_dir, pattern='test_*.py')
     return suite
