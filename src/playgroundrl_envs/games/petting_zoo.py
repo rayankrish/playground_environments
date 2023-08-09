@@ -99,7 +99,13 @@ class PettingZooGame(GameInterface):
         return 2
 
     def get_outcome(self, player_id):
-        pass
-
+        if not self.is_game_over:   
+            return None
+        if self.is_game_over and self.reward == -1:      
+            return 0
+        elif self.is_game_over and self.reward == 1:            
+            return 1
+        return 0.5
+    
     def get_player_moving(self) -> PlayerInterface:
         return self.players[self.player_ids[self.player_moving_index]]
