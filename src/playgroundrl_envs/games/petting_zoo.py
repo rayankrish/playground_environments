@@ -93,6 +93,10 @@ class PettingZooGame(GameInterface):
     @staticmethod
     def get_game_name():
         return "petting_zoo"
+    
+    @staticmethod
+    def get_game_subname(self):
+        return self.game_name
 
     @staticmethod
     def get_num_players():
