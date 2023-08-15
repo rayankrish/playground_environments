@@ -167,16 +167,17 @@ class CodenamesGame(GameInterface):
                     f"Guess out not in range (-1, {BOARD_SIZE})"
                 )
 
-            if self.guessed_colors[guess] != Color.UNKNOWN:
-                # Guessed an already guessed square
-                raise PlaygroundInvalidActionException(
-                    "Guessed a previously-guessed card"
-                )
+            if guess != -1:
+                if self.guessed_colors[guess] != Color.UNKNOWN:
+                    # Guessed an already guessed square
+                    raise PlaygroundInvalidActionException(
+                        "Guessed a previously-guessed card"
+                    )
 
-            if guess in seen:
-                # Duplicate guess in list
-                raise PlaygroundInvalidActionException("Duplicate guesses in list")
-            seen.add(guess)
+                if guess in seen:
+                    # Duplicate guess in list
+                    raise PlaygroundInvalidActionException("Duplicate guesses in list")
+                seen.add(guess)
 
     def handle_guesser_action(self, action: Dict[str, Any]) -> bool:
         """
