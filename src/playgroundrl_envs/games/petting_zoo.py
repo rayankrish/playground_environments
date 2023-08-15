@@ -7,6 +7,7 @@ import pickle
 from PIL import Image
 import io
 import base64
+import json
 from pettingzoo.classic import connect_four_v3
 from ..exceptions import PlaygroundInvalidActionException
 
@@ -62,7 +63,8 @@ class PettingZooGame(GameInterface):
             raise PlaygroundInvalidActionException("Not player's turn")
 
         # parse the action
-        action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))
+        action = json.loads(raw_action)
+        # action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))
         print(type(action))
 
         self.env.step(action)  # TODO: check if this was performed smoothly
@@ -78,8 +80,21 @@ class PettingZooGame(GameInterface):
 
     def get_state(self, player_sid="", player_id=0):
         # TODO: see if we need to change this based on the player accessing it
-        pickled = codecs.encode(pickle.dumps(self.state), "base64").decode()
-        return pickled, float(self.state[1])
+        
+        print("state", self.state)
+        print(self.player_moving_index, len(self.player_ids))
+
+        agent = self.players[self.player_ids[self.player_moving_index]].agent_name
+        observation = self.state[0]['observation'].flatten().tolist()
+
+        print("observation type", type(observation))
+        print("observation", observation)
+        
+        state_jsonable = self.env.observation_space(agent=agent).to_jsonable([observation])
+        state_str = json.dumps(state_jsonable)
+        return state_str, float(self.state[1])
+        # pickled = codecs.encode(pickle.dumps(self.state), "base64").decode()
+        # return pickled, float(self.state[1])
 
     def get_render(self):
         im = Image.fromarray(self.env.render())
