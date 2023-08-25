@@ -99,7 +99,7 @@ class TicTacToeGame(GameInterface):
 
     def get_state(self, player_sid="", player_id=-1):
         if player_id == -1:
-            player_id = self.player_moving.player_id
+            player_id = self.player_moving.player_id        
 
         # Return as JSON so it's very easy to parse
         return (

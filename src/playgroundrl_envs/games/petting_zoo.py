@@ -47,6 +47,7 @@ class PettingZooGame(GameInterface):
         )  # TODO: don't do this unless we need it
         self.env.reset()
         self.state = self.env.last()
+        self.latest_json_action = {}
 
         for i, agent in enumerate(self.env.agents):
             players[i].agent_name = agent
@@ -58,16 +59,22 @@ class PettingZooGame(GameInterface):
 
     def submit_action(self, raw_action, player_sid=""):
         curr_player = self.players[self.player_ids[self.player_moving_index]]
-        if curr_player.sid != player_sid:
-            # Assert the socket has the right to make actions for this player
-            raise PlaygroundInvalidActionException("Not player's turn")
+        # if curr_player.sid != player_sid:
+        #     # Assert the socket has the right to make actions for this player
+        #     raise PlaygroundInvalidActionException("Not player's turn")
+                       
+        player_id = self.player_ids[self.player_moving_index]
+        pettingzoo_agent = self.players[player_id].agent_name
+        action_space = self.env.action_space(agent = pettingzoo_agent)
 
-        # parse the action
-        action = json.loads(raw_action)
-        # action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))
-        print(type(action))
-
-        self.env.step(action)  # TODO: check if this was performed smoothly
+        if self.self_training:
+            action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))  
+        else:
+            action = json.loads(raw_action)      
+        pz_action = action_space.from_jsonable([action])[0]
+        self.env.step(pz_action)
+        self.latest_json_action = pz_action
+    
         self.state = self.env.last()
         if self.state[-3] or self.state[-2]:
             self.is_game_over = True
@@ -79,22 +86,22 @@ class PettingZooGame(GameInterface):
         return True
 
     def get_state(self, player_sid="", player_id=0):
-        # TODO: see if we need to change this based on the player accessing it
+        if self.self_training:
+            print("playing against self")
+            pickled = codecs.encode(pickle.dumps(self.state), "base64").decode()
+            return pickled, float(self.state[1])        
+        else: 
+            agent = self.players[self.player_ids[self.player_moving_index]].agent_name
+            # observation = self.state[0]['observation']        
+            observation = self.latest_json_action
+            print("observation type", type(observation))
+            print("observation", observation)
+            
+            state_jsonable = self.env.action_space(agent=agent).to_jsonable([observation])[0]
+            state_str = json.dumps(state_jsonable)        
+            
+            return state_str, float(self.state[1])
         
-        print("state", self.state)
-        print(self.player_moving_index, len(self.player_ids))
-
-        agent = self.players[self.player_ids[self.player_moving_index]].agent_name
-        observation = self.state[0]['observation'].flatten().tolist()
-
-        print("observation type", type(observation))
-        print("observation", observation)
-        
-        state_jsonable = self.env.observation_space(agent=agent).to_jsonable([observation])
-        state_str = json.dumps(state_jsonable)
-        return state_str, float(self.state[1])
-        # pickled = codecs.encode(pickle.dumps(self.state), "base64").decode()
-        # return pickled, float(self.state[1])
 
     def get_render(self):
         im = Image.fromarray(self.env.render())
@@ -109,7 +116,6 @@ class PettingZooGame(GameInterface):
     def get_game_name():
         return "petting_zoo"
     
-    @staticmethod
     def get_game_subname(self):
         return self.game_name
 
