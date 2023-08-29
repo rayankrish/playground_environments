@@ -122,9 +122,9 @@ class PettingZooGame(GameInterface):
     def get_outcome(self, player_id):
         if not self.is_game_over:   
             return None
-        if self.is_game_over and self.reward == -1:      
+        if self.reward == -1:      
             return 0
-        elif self.is_game_over and self.reward == 1:            
+        elif self.reward == 1:            
             return 1
         return 0.5
     
