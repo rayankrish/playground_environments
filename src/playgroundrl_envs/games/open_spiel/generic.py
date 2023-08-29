@@ -1,18 +1,52 @@
+import attrs
 import json
 import pyspiel
+from typing import List, Dict
 
-class OpenSpielGame:
-    def __init__(self, game_name):
-        self.game_name = game_name
-        game = pyspiel.load_game(game_name)
+from ..game_interface import GameInterface, PlayerInterface, GameParameterInterface
+from ..exceptions import PlaygroundInvalidActionException
+from .config import GAME_LIST
+
+class OpenSpielPlayer(PlayerInterface):
+    def __init__(self, sid_info, player_id):
+        super().__init__(sid_info, player_id)
+
+@attrs.define(frozen=True)
+class OpenSpielParameters(GameParameterInterface):
+    game_name: str
+
+class OpenSpielGame(GameInterface):
+    def __init__(
+        self,
+        game_id: str,
+        players: List[OpenSpielPlayer],
+        game_type: int,
+        parameters: OpenSpielParameters,
+        self_training=False,
+    ):
+        super().__init__(game_id, parameters, players, game_type, self_training)
+
+        self.game_name = parameters.game_name
+        if self.game_name not in GAME_LIST:
+            raise ValueError("Invalid game name")
+
+        game = pyspiel.load_game(self.game_name)
         self.state = game.new_initial_state()
-        self.num_players = game.num_players()
-        self.players = list(range(self.num_players))
+        self.num_players = len(players)
+        if self.num_players > game.max_num_players or self.num_players < game.min_num_players:
+            raise ValueError("Invalid number of players")
+        self.players = players
+        # create inverse mapping from sid to player_id using dictionary comprehension
+        self.player_id_dict = {player.sid: player.player_id for player in players}
         self.is_game_over = False
+        
 
-    def submit_action(self, action, player_id):
-        if player_id not in self.players:
-            raise ValueError("Invalid player ID")
+    def submit_action(self, action, player_sid):
+        
+        if player_sid not in self.player_id_dict:
+            raise ValueError("Invalid player SID")
+
+        player_id = self.player_id_dict[player_sid]
 
         if self.state.current_player() != player_id:
             raise ValueError("Not your turn")
@@ -47,7 +81,7 @@ class OpenSpielGame:
         return self.num_players
 
     def get_player_moving(self):
-        return self.state.current_player()
+        return self.players[self.state.current_player()].sid
 
     def get_outcome(self, player_id):
         if self.is_game_over:
@@ -56,24 +90,3 @@ class OpenSpielGame:
                 return returns[player_id]
             return 0.0
 
-if __name__ == "__main__":
-    # Example usage
-    game = OpenSpielGame(game_name="tic_tac_toe")
-
-    # Suppose it's player 0's turn and they make a move
-    game.submit_action("x(0,0)", player_id=0)
-
-    # Get the current state for player 0
-    state_json, reward = game.get_state(player_id=0)
-    print("State:", state_json)
-    print("Reward:", reward)
-
-    # Check if the game is over
-    print("Game Over:", game.get_is_game_over())
-
-    # Get the player currently moving
-    print("Player Moving:", game.get_player_moving())
-
-    # Get the outcome for player 0
-    outcome = game.get_outcome(player_id=0)
-    print("Outcome for Player 0:", outcome)
