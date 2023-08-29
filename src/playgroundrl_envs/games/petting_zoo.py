@@ -53,7 +53,6 @@ class PettingZooGame(GameInterface):
             players[i].agent_name = agent
 
         # for now, just assign the player moving sequentially
-        # TODO: check if this generalizes for all games
         self.player_moving_index = 0
         self.player_ids = list(self.players.keys())
 
@@ -70,7 +69,8 @@ class PettingZooGame(GameInterface):
         if self.self_training:
             action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))  
         else:
-            action = json.loads(raw_action)      
+            action = json.loads(raw_action)    
+
         pz_action = action_space.from_jsonable([action])[0]
         self.env.step(pz_action)
         self.latest_json_action = pz_action
@@ -87,15 +87,11 @@ class PettingZooGame(GameInterface):
 
     def get_state(self, player_sid="", player_id=0):
         if self.self_training:
-            print("playing against self")
             pickled = codecs.encode(pickle.dumps(self.state), "base64").decode()
             return pickled, float(self.state[1])        
         else: 
             agent = self.players[self.player_ids[self.player_moving_index]].agent_name
-            # observation = self.state[0]['observation']        
             observation = self.latest_json_action
-            print("observation type", type(observation))
-            print("observation", observation)
             
             state_jsonable = self.env.action_space(agent=agent).to_jsonable([observation])[0]
             state_str = json.dumps(state_jsonable)        
