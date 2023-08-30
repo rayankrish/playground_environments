@@ -7,6 +7,7 @@ import pickle
 from PIL import Image
 import io
 import base64
+import json
 from pettingzoo.classic import connect_four_v3
 from ..exceptions import PlaygroundInvalidActionException
 
@@ -46,26 +47,34 @@ class PettingZooGame(GameInterface):
         )  # TODO: don't do this unless we need it
         self.env.reset()
         self.state = self.env.last()
+        self.latest_json_action = {}
 
         for i, agent in enumerate(self.env.agents):
             players[i].agent_name = agent
 
         # for now, just assign the player moving sequentially
-        # TODO: check if this generalizes for all games
         self.player_moving_index = 0
         self.player_ids = list(self.players.keys())
 
     def submit_action(self, raw_action, player_sid=""):
         curr_player = self.players[self.player_ids[self.player_moving_index]]
-        if curr_player.sid != player_sid:
-            # Assert the socket has the right to make actions for this player
-            raise PlaygroundInvalidActionException("Not player's turn")
+        # if curr_player.sid != player_sid:
+        #     # Assert the socket has the right to make actions for this player
+        #     raise PlaygroundInvalidActionException("Not player's turn")
+                       
+        player_id = self.player_ids[self.player_moving_index]
+        pettingzoo_agent = self.players[player_id].agent_name
+        action_space = self.env.action_space(agent = pettingzoo_agent)
 
-        # parse the action
-        action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))
-        print(type(action))
+        if self.self_training:
+            action = pickle.loads(codecs.decode(raw_action.encode(), "base64"))  
+        else:
+            action = json.loads(raw_action)    
 
-        self.env.step(action)  # TODO: check if this was performed smoothly
+        pz_action = action_space.from_jsonable([action])[0]
+        self.env.step(pz_action)
+        self.latest_json_action = pz_action
+    
         self.state = self.env.last()
         if self.state[-3] or self.state[-2]:
             self.is_game_over = True
@@ -77,9 +86,18 @@ class PettingZooGame(GameInterface):
         return True
 
     def get_state(self, player_sid="", player_id=0):
-        # TODO: see if we need to change this based on the player accessing it
-        pickled = codecs.encode(pickle.dumps(self.state), "base64").decode()
-        return pickled, float(self.state[1])
+        if self.self_training:
+            pickled = codecs.encode(pickle.dumps(self.state), "base64").decode()
+            return pickled, float(self.state[1])        
+        else: 
+            agent = self.players[self.player_ids[self.player_moving_index]].agent_name
+            observation = self.latest_json_action
+            
+            state_jsonable = self.env.action_space(agent=agent).to_jsonable([observation])[0]
+            state_str = json.dumps(state_jsonable)        
+            
+            return state_str, float(self.state[1])
+        
 
     def get_render(self):
         im = Image.fromarray(self.env.render())
@@ -93,13 +111,22 @@ class PettingZooGame(GameInterface):
     @staticmethod
     def get_game_name():
         return "petting_zoo"
+    
+    def get_game_subname(self):
+        return self.game_name
 
     @staticmethod
     def get_num_players():
         return 2
 
     def get_outcome(self, player_id):
-        pass
-
+        if not self.is_game_over:   
+            return None
+        if self.reward == -1:      
+            return 0
+        elif self.reward == 1:            
+            return 1
+        return 0.5
+    
     def get_player_moving(self) -> PlayerInterface:
         return self.players[self.player_ids[self.player_moving_index]]
