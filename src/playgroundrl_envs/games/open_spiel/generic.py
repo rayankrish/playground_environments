@@ -67,8 +67,8 @@ class OpenSpielGame(GameInterface):
             raise ValueError("Invalid player ID")
 
         state = {
-            "fen": self.state.observation_string(player_id),
-            "observation": self.state.observation_tensor(player_id),
+            "observation_string": self.state.observation_string(player_id),
+            "observation_tensor": self.state.observation_tensor(player_id),
             "player_moving": self.state.current_player(),
         }
         reward = 0.0  # TODO: specify reward

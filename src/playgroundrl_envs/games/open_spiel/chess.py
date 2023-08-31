@@ -1,6 +1,6 @@
 import json
 import pyspiel
-from generic import OpenSpielGame
+from .generic import OpenSpielGame
 
 class ChessGame(OpenSpielGame):
     def __init__(self):
