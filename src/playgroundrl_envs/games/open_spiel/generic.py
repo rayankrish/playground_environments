@@ -3,14 +3,14 @@ import json
 import pyspiel
 from typing import List, Dict
 
-from ..game_interface import GameInterface, PlayerInterface, GameParameterInterface
-from ..exceptions import PlaygroundInvalidActionException
+from ...game_interface import GameInterface, PlayerInterface, GameParameterInterface
+from ...exceptions import PlaygroundInvalidActionException
 from .config import GAME_LIST
 
-class OpenSpielPlayer(PlayerInterface):
-    def __init__(self, sid_info, player_id):
-        super().__init__(sid_info, player_id)
 
+@attrs.define
+class OpenSpielPlayer(PlayerInterface):
+    agent_name: str = ""
 @attrs.define(frozen=True)
 class OpenSpielParameters(GameParameterInterface):
     game_name: str
@@ -31,9 +31,10 @@ class OpenSpielGame(GameInterface):
             raise ValueError("Invalid game name")
 
         game = pyspiel.load_game(self.game_name)
+        game_type = game.get_type()
         self.state = game.new_initial_state()
         self.num_players = len(players)
-        if self.num_players > game.max_num_players or self.num_players < game.min_num_players:
+        if self.num_players > game_type.max_num_players or self.num_players < game_type.min_num_players:
             raise ValueError("Invalid number of players")
         self.players = players
         # create inverse mapping from sid to player_id using dictionary comprehension

@@ -11,6 +11,7 @@ setup(
         "playgroundrl_envs.games.go.engine",
         "playgroundrl_envs.games.codenames",
         "playgroundrl_envs.games.catan",
+        "playgroundrl_envs.games.open_spiel"
     ],
     package_dir={"": "src"},
     package_data={"": ["*.txt"]},
@@ -33,5 +34,6 @@ setup(
         "scikit-learn==1.2.2",
         "scipy==1.10.1",
         "texasholdem==0.9.0",
+        "open_spiel"
     ],
 )
