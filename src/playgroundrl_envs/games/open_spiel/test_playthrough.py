@@ -454,6 +454,8 @@ def playthrough_lines(game_string, alsologtostdout=False, action_sequence=None,
       add_line("action: {}".format(action), force=True)
       state.apply_action(action)
     state_idx += 1
+
+    break
   return lines
 
 
@@ -557,4 +559,4 @@ def update_path(path, shard_index=0, num_shards=1):
       raise
 
 if __name__ == "__main__":
-    playthrough_lines("2048", alsologtostdout=True)
+    playthrough_lines("backgammon", alsologtostdout=True)
